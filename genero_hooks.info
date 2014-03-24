@@ -1,0 +1,7 @@
+name = Genero Hooks
+description = Various contrib fixes
+package = custom
+core = 7.x
+
+files[] = views/genero_hooks_handler_area_entity.inc
+files[] = includes/genero_hooks.views.inc

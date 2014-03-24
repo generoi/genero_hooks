@@ -1,0 +1,279 @@
+<?php
+
+/**
+ * @file genero_hooks.module
+ * TODO: Enter file description here.
+ */
+
+if (module_exists('token')) {
+  module_load_include('inc', 'genero_hooks', 'includes/genero_hooks.token');
+}
+if (module_exists('metatag')) {
+  module_load_include('inc', 'genero_hooks', 'includes/genero_hooks.metatag');
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function genero_hooks_views_api() {
+  return array(
+    'api' => '3.0',
+    'path' => drupal_get_path('module', 'genero_hooks') . '/includes',
+  );
+}
+
+/**
+ * Implements hook_field_attach_view_alter().
+ */
+function genero_hooks_field_attach_view_alter(&$output, $context) {
+  if (module_exists('viewfield')) {
+    foreach (element_children($output) as $field_name) {
+      $element = &$output[$field_name];
+      if ($element['#field_type'] == 'viewfield') {
+        foreach (element_children($element) as $idx) {
+          $item = $element[$idx];
+          $view = $item['#view'];
+          $display = $item['#view_display'];
+          $arguments = _viewfield_get_view_args($item['#view_arguments'], $item['#entity_type'], $item['#entity']);
+          // Call preview so the result property is populated.
+          $view->preview($display, $arguments);
+          // Hide labels of viewfields where the view returns an empty result.
+          if (empty($view->result)) {
+            $element['#label_display'] = 'hidden';
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_block_view_alter().
+ */
+function genero_hooks_block_view_alter(&$data, $block) {
+  // Hide the block title if it's a bean. The bean renders it itself when DS is
+  // used.
+  if (module_exists('ds') && $block->module == 'bean') {
+    $data['subject'] = NULL;
+  }
+}
+
+/**
+ * Implements hook_init().
+ *
+ * For whatever reason hook_page_build() wont include files when overlay is loaded.
+ */
+function genero_hooks_init() {
+  global $theme_info;
+
+  // admin_menu relies on $.browser which doesnt exist in jquery 1.9+.
+  if (module_exists('jquery_update') && version_compare(variable_get('jquery_update_jquery_version'), '1.9', '>=')) {
+    drupal_add_js(drupal_get_path('module', 'genero_hooks') . '/jquery_update_fixes.js', array(
+      'group' => JS_LIBRARY,
+      'weight' => 3,
+    ));
+  }
+
+  // Fix various UX issues in the administration theme.
+  if ($theme_info->name == variable_get('admin_theme')) {
+    // LABjs breaks FieldUI formatters.
+    if (module_exists('labjs')) {
+      labjs_suppress(TRUE);
+    }
+
+    if (module_exists('linkit')) {
+      // Linkit assets arent loaded for some reason.
+      drupal_add_css(drupal_get_path('module', 'linkit') . '/css/linkit.css');
+      // @TODO figure this out! taxonomy term pages might not work for example.
+      // For some reason basic pages do not load these, while scroll page items
+      // do.
+      if (arg(0) == 'node' && (arg(1) == 'add' || arg(2) == 'edit')) {
+        drupal_add_js(drupal_get_path('module', 'linkit') . '/js/linkit.dashboard.js');
+        drupal_add_library('linkit', 'linkit');
+        drupal_add_library('linkit', 'bac');
+      }
+    }
+
+  }
+  // LABjs breaks admin pages displayed in overlay,
+  if (module_exists('overlay') && overlay_get_mode() == 'child' && module_exists('labjs')) {
+    labjs_suppress(TRUE);
+  }
+  // admin_menu relies on $.browser which doesnt exist in jquery 1.9+.
+  if (module_exists('jquery_update') && version_compare(variable_get('jquery_update_jquery_version'), '1.9', '>=')) {
+    drupal_add_js(drupal_get_path('module', 'genero_hooks') . '/jquery_update_fixes.js', array(
+      'group' => JS_LIBRARY,
+      'weight' => 3,
+    ));
+  }
+}
+
+/**
+ * Implements template_preprocess_taxonomy_term().
+
+ * TVI taxonomy term pages dont respect context_menutrail as the menu block is
+ * rendered before hook_page_delivery_callback_alter() is executed.
+ * @TODO how can we fix this properly?
+ */
+function genero_hooks_preprocess_taxonomy_term(&$variables) {
+  static $context = FALSE;
+  if (!$context && module_exists('tvi') && arg(0) == 'taxonomy' && arg(1) == 'term') {
+    if ($plugin = context_get_plugin('reaction', 'menutrail_menu')) {
+      $plugin->execute();
+    }
+    $context = TRUE;
+  }
+}
+
+/**
+ * Implements hook_libraries_info_alter().
+ */
+function genero_hooks_libraries_info_alter(&$libraries) {
+  // placeholder module references a minified file which doesnt exist in the
+  // repository. Reference the normal file instead.
+  if (isset($libraries['placeholder']['variants']['minified'])) {
+    $libraries['placeholder']['variants']['minified']['files']['js'] = array('jquery.placeholder.js');
+  }
+
+  // Leaflet doesnt specify that the global variable should be attached to window, therefore
+  // the LABjs wrapper locks its scope.
+  if (isset($libraries['leaflet']['files']['js']['leaflet_root_url'])) {
+    $libraries['leaflet']['files']['js']['leaflet_root_url']['data'] = 'window.L_ROOT_URL = "' . base_path() . libraries_get_path('leaflet') . '/";';
+  }
+}
+
+/**
+ * Implements hook_library_alter().
+
+ * Depending on the ordering of script files in the template picturefill can
+ * break LABjs.
+ */
+function genero_hooks_library_alter(&$libraries, $module) {
+  if ($module == 'picture' && isset($libraries['picturefill'])) {
+    unset($libraries['picturefill']['js'][0]['scope']);
+  }
+}
+
+/**
+ * Implements hook_addthis_configuration_alter().
+
+ * @see http://support.addthis.com/customer/portal/articles/1300322-pinterest-image-sharing
+ */
+function genero_hooks_addthis_configuration_alter(&$configuration) {
+  $configuration['image_exclude'] = 'at_exclude';
+}
+
+/**
+ * Implements hook_colorbox_settings_alter().
+ *
+ * Translate variable strings.
+ */
+function genero_hooks_colorbox_settings_alter(&$data, $style) {
+  foreach (array('current', 'previous', 'next', 'close') as $option) {
+    $data[$option] = t($data[$option]);
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+
+ * While saving nodes from admin theme the original theme function is still
+ * called for translated versions (synced maybe), therefore we override the
+ * theme_image_autosize_image function in a module.
+
+ * @see genero_hooks_image_autosize_image().
+ */
+function genero_hooks_theme_registry_alter(&$theme_registry) {
+  if (!empty($theme_registry['image_autosize_image'])) {
+    $theme_registry['image_autosize_image']['function'] = 'genero_hooks_image_autosize_image';
+  }
+}
+
+/**
+ * Overrides theme_image_autosize_image().
+
+ * Remove wrapper and caption. We simply want images to use an image style.
+
+ * @see genero_hooks_registry_alter().
+ */
+function genero_hooks_image_autosize_image($variables) {
+  $image = $variables['image'];
+  $settings = $variables['settings'];
+  $output = '<img' . drupal_attributes($image['attributes']) . ' />';
+  if ($settings['link']['enabled']) {
+    $attributes = array();
+    if ($settings['link']['class']) {
+      $attributes['class'] = $settings['link']['class'];
+    }
+    if ($settings['link']['rel']) {
+      $attributes['rel'] = $settings['link']['rel'];
+    }
+
+    // We don't use l() because $image['origin'] is absolute path.
+    $output = '<a href="' . $image['origin'] . '" ' . drupal_attributes($attributes) . '>' . $output . '</a>';
+  }
+
+  return $output;
+}
+
+/**
+ * Implements hook_query_alter().
+ *
+ * Filter search api autocomplete by language.
+ * @see https://drupal.org/comment/8418375#comment-8418375
+ */
+function genero_hooks_search_api_query_alter(SearchApiQueryInterface $query) {
+  if (module_exists('translation')) {
+    if (strpos($query->getOption('search id'), 'search_api_autocomplete:') !== FALSE) {
+      global $language;
+      $query->condition('language', $language->language);
+    }
+  }
+}
+
+/**
+ * Implements hook_pathologic_alter().
+ *
+ * Fix language prefix same across translations.
+ * @see https://drupal.org/comment/8496909#comment-8496909
+ */
+function genero_hooks_pathologic_alter(&$url_params, $parts, $settings) {
+  if (module_exists('translation')) {
+    $languages = language_list();
+    if (isset($languages[$settings['langcode']]) && !$settings['is_file']) {
+      $url_params['options']['language'] = $languages[$settings['langcode']];
+    }
+  }
+}
+
+/**
+ * Implements hook_field_attach_load().
+ *
+ * @see file_entity_field_attach_load().
+ */
+function genero_hooks_field_attach_load($entity_type, $entities, $age, $options) {
+  // Loop over all the entities looking for entities with attached images.
+  foreach ($entities as $entity) {
+    list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+    // Examine every image field instance attached to this entity's bundle.
+    $instances = array_intersect_key(field_info_instances($entity_type, $bundle), _file_entity_get_fields_by_type('image'));
+    foreach ($instances as $field_name => $instance) {
+      if (!empty($entity->{$field_name})) {
+        foreach ($entity->{$field_name} as $langcode => $items) {
+          foreach ($items as $delta => $item) {
+            // If alt and title text is not specified, fallback to the entities
+            // title.
+            // file_entity_field_attach_load() runs before this and attaches
+            // the files fields but if they do not exist, this will set the
+            // default.
+            foreach (array('alt', 'title') as $key) {
+              if (empty($item[$key])) {
+                $entity->{$field_name}[$langcode][$delta][$key] = entity_label($entity_type, $entity);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
