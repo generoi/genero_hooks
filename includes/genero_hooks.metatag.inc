@@ -156,4 +156,5 @@ function genero_hooks_image_default_styles() {
       $effect,
     ),
   );
+  return $styles;
 }
