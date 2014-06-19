@@ -11,6 +11,9 @@ if (module_exists('token')) {
 if (module_exists('metatag')) {
   module_load_include('inc', 'genero_hooks', 'includes/genero_hooks.metatag');
 }
+if (module_exists('fivestar')) {
+  module_load_include('inc', 'misc_hooks', 'includes/misc_hooks.fivestar');
+}
 
 /**
  * Implements hook_views_api().

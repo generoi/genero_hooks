@@ -1,0 +1,28 @@
+// To generate the css file use:
+// sass fontawesome_stars.scss fontawesome_stars.css
+
+// Import variables
+@import "../../../../themes/v3/bower_components/components-font-awesome/scss/variables";
+@import "../../../../themes/v3/scss/variables";
+
+// Include the core .fa class styling on .star
+$fa-css-prefix: "fivestar-fontawesome .star a";
+@import "../../../../themes/v3/bower_components/components-font-awesome/scss/core";
+
+.fivestar-fontawesome {
+  .star {
+    // Hide the background
+    &, a { background: none !important; }
+    a {
+      // Dont offset the text but make it transparent and colorize the fa-icon.
+      color: transparent !important;
+      text-indent: 0;
+      // Use fontawesome star icon
+      &:before { content: $fa-var-star; }
+    }
+    // By default
+    & a:before { color: #fff; }
+    // Active on hovering.
+    &.hover a:before, &.on a:before { color: red; }
+  }
+}
