@@ -400,8 +400,10 @@ function genero_hooks_form_node_form_alter(&$form, &$form_state, $form_id) {
  */
 function genero_hooks_module_implements_alter(&$implementations, $hook) {
   if ($hook == 'form_alter') {
-    $group = $implementations['genero_hooks'];
-    unset($implementations['genero_hooks']);
-    $implementations['genero_hooks'] = $group;
+    if (array_key_exists('genero_hooks', $implementations)) {
+      $group = $implementations['genero_hooks'];
+      unset($implementations['genero_hooks']);
+      $implementations['genero_hooks'] = $group;
+    }
   }
 }
