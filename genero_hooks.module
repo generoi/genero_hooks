@@ -11,6 +11,9 @@ if (module_exists('token')) {
 if (module_exists('metatag')) {
   module_load_include('inc', 'genero_hooks', 'includes/genero_hooks.metatag');
 }
+if (module_exists('fivestar')) {
+  module_load_include('inc', 'misc_hooks', 'includes/misc_hooks.fivestar');
+}
 
 /**
  * Implements hook_views_api().
@@ -327,7 +330,7 @@ function genero_hooks_views_pre_view(&$view) {
   }
 }
 
- /**
+/**
  * Implements hook_preprocess_panels_ipe_pane_wrapper().
  */
 function genero_hooks_preprocess_panels_ipe_pane_wrapper(&$vars) {
@@ -353,5 +356,52 @@ function genero_hooks_preprocess_panels_ipe_pane_wrapper(&$vars) {
     // Add css link
     $links_start['css'] = $css_link;
     $vars['links'] = array_merge($links_start, $links_end);
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ *
+ * Adds a default language according to the users language settings.
+ */
+function genero_hooks_form_node_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+
+  // If the node type has multilingual support and is an existing node: assign existing language value.
+  if (isset($form['#node']->type) && locale_multilingual_node_type($form['#node']->type) && isset($form['#node']->nid)) {
+    $form['language'] = array(
+      '#type' => 'select',
+      '#title' => t('Language'),
+      '#default_value' => (isset($form['#node']->language) ? $form['#node']->language : ''),
+      '#options' => array(LANGUAGE_NONE => t('Language neutral')) + locale_language_list('name'),
+    );
+  }
+  // If the node type has multilingual support and is new: assign language value of the user.
+  elseif (isset($form['#node']->type) && locale_multilingual_node_type($form['#node']->type) && !isset($form['#node']->nid)) {
+    $form['language'] = array(
+      '#type' => 'select',
+      '#title' => t('Language'),
+      '#default_value' => (isset($user->language) ? $user->language : ''),
+      '#options' => array(LANGUAGE_NONE => t('Language neutral')) + locale_language_list('name'),
+    );
+  }
+  // Node type without language selector: assign the default for new nodes
+  elseif (!isset($form['#node']->nid)) {
+    $default = language_default();
+    $form['language'] = array(
+      '#type' => 'value',
+      '#value' => $default->language,
+    );
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function genero_hooks_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'form_alter') {
+    $group = $implementations['genero_hooks'];
+    unset($implementations['genero_hooks']);
+    $implementations['genero_hooks'] = $group;
   }
 }
