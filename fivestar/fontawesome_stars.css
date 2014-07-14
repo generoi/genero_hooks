@@ -1,0 +1,23 @@
+/*
+ * Theme specific variables.
+ */
+.fivestar-fontawesome .star a {
+  display: inline-block;
+  font-family: FontAwesome;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale; }
+
+.fivestar-fontawesome .star, .fivestar-fontawesome .star a {
+  background: none !important; }
+.fivestar-fontawesome .star a {
+  color: transparent !important;
+  text-indent: 0; }
+  .fivestar-fontawesome .star a:before {
+    content: "\f005"; }
+.fivestar-fontawesome .star a:before {
+  color: #fff; }
+.fivestar-fontawesome .star.hover a:before, .fivestar-fontawesome .star.on a:before {
+  color: red; }
