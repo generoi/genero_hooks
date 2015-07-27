@@ -29,7 +29,7 @@ function genero_hooks_metatag_metatags_view_alter(&$output, $instance) {
         '#attached' => array(
           'drupal_add_html_head' => array(
             array(array(
-              '#theme' => 'metatag_opengraph',
+              '#theme' => 'metatag',
               '#tag' => 'meta',
               '#id' => 'metatag_og:image',
               '#name' => 'og:image',
@@ -49,7 +49,7 @@ function genero_hooks_metatag_metatags_view_alter(&$output, $instance) {
       '#attached' => array(
         'drupal_add_html_head' => array(
           array(array(
-            '#theme' => 'metatag_opengraph',
+            '#theme' => 'metatag',
             '#tag' => 'meta',
             '#id' => 'metatag_og:description',
             '#name' => 'og:description',
