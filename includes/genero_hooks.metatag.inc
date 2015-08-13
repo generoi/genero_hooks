@@ -213,7 +213,7 @@ function genero_hooks_taxonomy_form_term_post_submit($form, &$form_state) {
  * Remove the localized metatags from deleted taxonomy terms.
  */
 function genero_hooks_taxonomy_term_delete($term) {
-  if (!module_exists('i18n_taxonomy') || i18n_taxonomy_vocabulary_mode($vid) != I18N_MODE_LOCALIZE) {
+  if (!module_exists('i18n_taxonomy') || i18n_taxonomy_vocabulary_mode($term->vid) != I18N_MODE_LOCALIZE) {
     return;
   }
   foreach (genero_hooks_taxonomy_term_translated_metatags() as $key) {
