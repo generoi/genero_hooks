@@ -281,14 +281,14 @@ function genero_hooks_field_attach_load($entity_type, $entities, $age, $options)
  */
 function genero_hooks_form_node_form_alter(&$form, &$form_state, $form_id) {
   if (module_exists('locale')) {
-    global $user;
+    global $user, $language;
 
     // If the node type has multilingual support and is an existing node: assign existing language value.
     if (isset($form['#node']->type) && locale_multilingual_node_type($form['#node']->type) && isset($form['#node']->nid)) {
       $form['language'] = array(
         '#type' => 'select',
         '#title' => t('Language'),
-        '#default_value' => (isset($form['#node']->language) ? $form['#node']->language : ''),
+        '#default_value' => (isset($form['#node']->language) ? $form['#node']->language : $language->language),
         '#options' => array(LANGUAGE_NONE => t('Language neutral')) + locale_language_list('name'),
       );
     }
@@ -297,7 +297,7 @@ function genero_hooks_form_node_form_alter(&$form, &$form_state, $form_id) {
       $form['language'] = array(
         '#type' => 'select',
         '#title' => t('Language'),
-        '#default_value' => (isset($user->language) ? $user->language : ''),
+        '#default_value' => (isset($user->language) ? $user->language : $language->language),
         '#options' => array(LANGUAGE_NONE => t('Language neutral')) + locale_language_list('name'),
       );
     }
