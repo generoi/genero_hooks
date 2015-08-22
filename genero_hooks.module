@@ -64,6 +64,33 @@ function genero_hooks_block_view_alter(&$data, $block) {
 }
 
 /**
+ * Detect the current jquery version.
+ *
+ * @TODO does not take admin theme into account when using jquery_update v7.x-2.x.
+ */
+function _generoi_detect_jquery_version($theme_name = NULL) {
+  $jquery_version = '1.4';
+  if (is_null($theme_name)) {
+    global $theme;
+    $theme_name = $theme;
+  }
+  // admin_menu relies on $.browser which doesnt exist in jquery 1.9+.
+  if (module_exists('jquery_update')) {
+    $module_info = system_get_info('module', 'jquery_update');
+    if (version_compare($module_info['version'], '7.x-3.x', '<')) {
+      $jquery_version = variable_get('jquery_update_jquery_version');
+    }
+    else {
+      $jquery_version = theme_get_setting('jquery_update_jquery_version', $theme_name);
+      if (empty($jquery_version)) {
+        $jquery_version = variable_get('jquery_update_jquery_version', '1.10');
+      }
+    }
+  }
+  return $jquery_version;
+}
+
+/**
  * Implements hook_init().
  *
  * For whatever reason hook_page_build() wont include files when overlay is loaded.
@@ -144,6 +171,16 @@ function genero_hooks_libraries_info_alter(&$libraries) {
   // the LABjs wrapper locks its scope.
   if (isset($libraries['leaflet']['files']['js']['leaflet_root_url'])) {
     $libraries['leaflet']['files']['js']['leaflet_root_url']['data'] = 'window.L_ROOT_URL = "' . base_path() . libraries_get_path('leaflet') . '/";';
+  }
+
+  // Use the new imagesloaded.js filename in version 3
+  $jquery_version = _generoi_detect_jquery_version();
+  if (version_compare($jquery_version, '1.7', '>=')) {
+    if (isset($libraries['jquery.imagesloaded']['files']['js'])) {
+      $libraries['jquery.imagesloaded']['files']['js'] = array('imagesloaded.pkgd.min.js');
+      $libraries['jquery.imagesloaded']['version arguments']['file'] = 'imagesloaded.pkgd.js';
+      $libraries['jquery.imagesloaded']['variants']['source']['files']['js'] = array('imagesloaded.pkgd.min.js');
+    }
   }
 }
 
