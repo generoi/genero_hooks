@@ -24,8 +24,14 @@ class genero_hooks_handler_area_entity extends entity_views_handler_area_entity 
     // Replace argument tokens in entity id.
     $entity_id = strtr($entity_id, $tokens);
     if (!empty($entity_type) && !empty($entity_id) && !empty($view_mode)) {
+      if (!is_numeric($entity_id)) {
+        return '';
+      }
       $entity = entity_load_single($entity_type, $entity_id);
       if (!empty($this->options['bypass_access']) || entity_access('view', $entity_type, $entity)) {
+        if ($entity_type == 'taxonomy_term' && module_exists('i18n_taxonomy')) {
+          $entity = i18n_taxonomy_localize_terms($entity);
+        }
         $render = entity_view($entity_type, array($entity), $view_mode);
         $render_entity = reset($render);
         return drupal_render($render_entity);
