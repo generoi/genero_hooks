@@ -20,15 +20,10 @@ class genero_hooks_handler_area_entity extends entity_views_handler_area_entity 
    * Render an entity using the view mode.
    */
   public function render_entity($entity_type, $entity_id, $view_mode) {
+    $tokens = $this->get_render_tokens();
+    // Replace argument tokens in entity id.
+    $entity_id = strtr($entity_id, $tokens);
     if (!empty($entity_type) && !empty($entity_id) && !empty($view_mode)) {
-      $tokens = $this->get_render_tokens();
-      // Replace argument tokens in entity id.
-      $entity_id = strtr($entity_id, $tokens);
-
-      if (!is_numeric($entity_id)) {
-        return '';
-      }
-
       $entity = entity_load_single($entity_type, $entity_id);
       if (!empty($this->options['bypass_access']) || entity_access('view', $entity_type, $entity)) {
         $render = entity_view($entity_type, array($entity), $view_mode);
@@ -63,7 +58,7 @@ class genero_hooks_handler_area_entity extends entity_views_handler_area_entity 
       // Use strip tags as there should never be HTML in the path.
       // However, we need to preserve special characters like " that
       // were removed by check_plain().
-      $tokens['%' . $count] = isset($this->view->args[$count - 1]) ? strip_tags(decode_entities($this->view->args[$count - 1])) : '';
+      $tokens['%' . $count] = $handler->argument;
     }
 
     return $tokens;
