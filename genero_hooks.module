@@ -18,6 +18,15 @@ if (module_exists('panels')) {
 }
 
 /**
+ * Implements hook_ctools_plugin_directory().
+ */
+function genero_hooks_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ctools' && $plugin == 'content_types') {
+    return 'plugins/content_types';
+  }
+}
+
+/**
  * Implements hook_views_api().
  */
 function genero_hooks_views_api() {
