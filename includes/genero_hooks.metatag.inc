@@ -227,6 +227,9 @@ function genero_hooks_taxonomy_term_delete($term) {
  * Provide localized metatags for localized taxonomy terms.
  */
 function genero_hooks_form_i18n_string_translate_page_form_alter(&$form, &$form_state) {
+  if (!isset($form['term'])) {
+    return;
+  }
   $tid = $form['term']['#value'];
   $term = taxonomy_term_load($tid);
   $langcode = $form['langcode']['#value'];
