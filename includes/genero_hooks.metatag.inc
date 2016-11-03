@@ -34,7 +34,7 @@ function genero_hooks_metatag_metatags_view_alter(&$output, $instance) {
               '#id' => 'metatag_og:image',
               '#name' => 'og:image',
               // Unfortunately AddThis does not respect this.
-              '#attributes' => array('nopin' => 'nopin', 'class' => array('at_exclude')),
+              '#attributes' => array('nopin' => 'nopin', 'class' => array('at_exclude'), 'property' => 'og:image'),
               '#value' => $image_url,
             ), 'metatag_og:image'),
           ),
